@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
@@ -27,6 +28,9 @@ namespace osu.Game.Screens.Play
         private readonly bool replayIsFailedScore;
 
         protected override UserActivity InitialActivity => new UserActivity.WatchingReplay(Score.ScoreInfo);
+
+        [Resolved]
+        private ScoreManager scoreManager { get; set; } = null!;
 
         // Disallow replays from failing. (see https://github.com/ppy/osu/issues/6108)
         protected override bool CheckModsAllowFailure()
@@ -89,6 +93,13 @@ namespace osu.Game.Screens.Play
                         GameplayClockContainer.Start();
                     else
                         GameplayClockContainer.Stop();
+                    return true;
+
+                case GlobalAction.ExportReplay:
+                    if (e.Repeat)
+                        return false;
+
+                    scoreManager.Export(Score.ScoreInfo);
                     return true;
             }
 

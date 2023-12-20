@@ -169,6 +169,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(InputKey.Left, GlobalAction.SeekReplayBackward),
             new KeyBinding(InputKey.Right, GlobalAction.SeekReplayForward),
             new KeyBinding(new[] { InputKey.Control, InputKey.H }, GlobalAction.ToggleReplaySettings),
+            new KeyBinding(InputKey.F2, GlobalAction.ExportReplay),
         };
 
         private static IEnumerable<KeyBinding> songSelectKeyBindings => new[]
