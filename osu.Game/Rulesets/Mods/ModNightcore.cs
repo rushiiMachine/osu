@@ -37,6 +37,9 @@ namespace osu.Game.Rulesets.Mods
             Precision = 0.01,
         };
 
+        [SettingSource("Beats", "Enable background drum beats")]
+        public BindableBool EnableBeats { get; } = new BindableBool(true);
+
         private readonly BindableNumber<double> tempoAdjust = new BindableDouble(1);
         private readonly BindableNumber<double> freqAdjust = new BindableDouble(1);
 
@@ -69,7 +72,8 @@ namespace osu.Game.Rulesets.Mods
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<TObject> drawableRuleset)
         {
-            drawableRuleset.Overlays.Add(new NightcoreBeatContainer());
+            if (EnableBeats.Value)
+                drawableRuleset.Overlays.Add(new NightcoreBeatContainer());
         }
 
         public partial class NightcoreBeatContainer : BeatSyncedContainer
