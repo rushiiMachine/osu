@@ -43,6 +43,13 @@ namespace osu.Game.Screens.Ranking.Expanded
 
         private readonly List<StatisticDisplay> statisticDisplays = new List<StatisticDisplay>();
 
+        /// <summary>
+        /// Check whether all the children in this panel content have finished rolling and animating.
+        /// </summary>
+        public bool FinishedAnimating => finishedAnimating.All(test => test());
+
+        private readonly List<Func<bool>> finishedAnimating = new List<Func<bool>>();
+
         private FillFlowContainer starAndModDisplay;
         private RollingCounter<long> scoreCounter;
 
@@ -74,28 +81,32 @@ namespace osu.Game.Screens.Ranking.Expanded
 
             var topStatistics = new List<StatisticDisplay>
             {
-                new AccuracyStatistic(score.Accuracy)
+                new AccuracyStatistic(score.Accuracy).With(stat =>
                 {
-                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
-                },
-                new ComboStatistic(score.MaxCombo, score.GetMaximumAchievableCombo())
+                    stat.FinishRollingImmediately.BindTo(FinishAnimatingImmediately);
+                    finishedAnimating.Add(() => stat.FinishedRolling);
+                }),
+                new ComboStatistic(score.MaxCombo, score.GetMaximumAchievableCombo()).With(stat =>
                 {
-                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
-                },
-                new PerformanceStatistic(score)
+                    stat.FinishRollingImmediately.BindTo(FinishAnimatingImmediately);
+                    finishedAnimating.Add(() => stat.FinishedRolling);
+                }),
+                new PerformanceStatistic(score).With(stat =>
                 {
-                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
-                },
+                    stat.FinishRollingImmediately.BindTo(FinishAnimatingImmediately);
+                    finishedAnimating.Add(() => stat.FinishedRolling);
+                }),
             };
 
             var bottomStatistics = new List<HitResultStatistic>();
 
             foreach (var result in score.GetStatisticsForDisplay())
             {
-                bottomStatistics.Add(new HitResultStatistic(result)
+                bottomStatistics.Add(new HitResultStatistic(result).With(stat =>
                 {
-                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
-                });
+                    stat.FinishRollingImmediately.BindTo(FinishAnimatingImmediately);
+                    finishedAnimating.Add(() => stat.FinishedRolling);
+                }));
             }
 
             statisticDisplays.AddRange(topStatistics);
@@ -147,7 +158,7 @@ namespace osu.Game.Screens.Ranking.Expanded
                                     RelativeSizeAxes = Axes.Both,
                                     FillMode = FillMode.Fit,
                                     FinishAnimatingImmediately = { BindTarget = FinishAnimatingImmediately },
-                                }
+                                }.With(stat => finishedAnimating.Add(() => stat.FinishedAnimating))
                             },
                             scoreCounter = new TotalScoreCounter(!withFlair)
                             {

@@ -105,6 +105,8 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
         private double lastTickPlaybackTime;
         private bool isTicking;
 
+        public bool FinishedAnimating { get; private set; }
+
         private readonly double accuracyX;
         private readonly double accuracyS;
         private readonly double accuracyA;
@@ -262,7 +264,7 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                 });
             }
 
-            FinishAnimatingImmediately.BindValueChanged(e =>
+            FinishAnimatingImmediately.ValueChanged += e =>
             {
                 if (!e.NewValue || e.OldValue) return;
 
@@ -282,9 +284,11 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
 
                         if (!rankText.IsPresent)
                             rankText.Appear();
+
+                        Schedule(() => FinishedAnimating = true);
                     }
                 });
-            });
+            };
         }
 
         protected override void LoadComplete()
@@ -406,6 +410,7 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                             return;
 
                         rankText.Appear();
+                        FinishedAnimating = true;
                     });
 
                     if (!withFlair) return;
@@ -436,10 +441,14 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                 }
             }
 
+            // This was already set prior to LoadComplete
             if (FinishAnimatingImmediately.Value)
             {
                 isTicking = false;
                 FinishTransforms(true);
+
+                rankText.Appear();
+                rankImpactSound.Play();
             }
         }
 

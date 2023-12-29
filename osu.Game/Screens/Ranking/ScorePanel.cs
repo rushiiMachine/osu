@@ -335,7 +335,9 @@ namespace osu.Game.Screens.Ranking
         {
             const double action_debounce = 350.0;
 
-            if (!finishAnimatingImmediately.Value /* && isAnimating */)
+            if (!finishAnimatingImmediately.Value
+                && middleLayerContent is ExpandedPanelMiddleContent middleContent
+                && !middleContent.FinishedAnimating)
             {
                 finishAnimatingImmediately.Value = true;
                 selectLastPressed = Clock.CurrentTime;

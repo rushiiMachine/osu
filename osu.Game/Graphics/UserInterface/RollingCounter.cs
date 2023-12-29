@@ -86,12 +86,6 @@ namespace osu.Game.Graphics.UserInterface
         {
             displayedCountText = CreateText();
 
-            FinishRollingImmediately.BindValueChanged(e =>
-            {
-                if (e.NewValue && !e.OldValue)
-                    StopRolling();
-            }, true);
-
             UpdateDisplay();
             Child = DrawableCount = (Drawable)displayedCountText;
         }
@@ -107,6 +101,12 @@ namespace osu.Game.Graphics.UserInterface
             base.LoadComplete();
 
             Current.BindValueChanged(val => TransformCount(DisplayedCount, val.NewValue), true);
+
+            FinishRollingImmediately.BindValueChanged(e =>
+            {
+                if (e.NewValue)
+                    StopRolling();
+            }, true);
         }
 
         /// <summary>
