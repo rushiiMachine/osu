@@ -3,16 +3,16 @@
 
 #nullable disable
 
-using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Sprites;
-using osu.Game.Graphics.Sprites;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
+using osu.Game.Graphics.Sprites;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -30,6 +30,11 @@ namespace osu.Game.Graphics.UserInterface
         private IHasText displayedCountText;
 
         public Drawable DrawableCount { get; private set; }
+
+        /// <summary>
+        /// When true or changed to true, if this counter is currently rolling then it will immediately finish to the real value.
+        /// </summary>
+        public Bindable<bool> FinishRollingImmediately = new Bindable<bool>();
 
         /// <summary>
         /// If true, the roll-up duration will be proportional to change in value.
@@ -62,6 +67,9 @@ namespace osu.Game.Graphics.UserInterface
 
                 displayedCount = value;
                 UpdateDisplay();
+
+                if (FinishRollingImmediately.Value)
+                    StopRolling();
             }
         }
 
@@ -77,6 +85,12 @@ namespace osu.Game.Graphics.UserInterface
         private void load()
         {
             displayedCountText = CreateText();
+
+            FinishRollingImmediately.BindValueChanged(e =>
+            {
+                if (e.NewValue && !e.OldValue)
+                    StopRolling();
+            }, true);
 
             UpdateDisplay();
             Child = DrawableCount = (Drawable)displayedCountText;
@@ -113,6 +127,12 @@ namespace osu.Game.Graphics.UserInterface
             FinishTransforms(false, nameof(DisplayedCount));
             DisplayedCount = Current.Value;
         }
+
+        /// <summary>
+        /// Check whether the counter is currently rolling the display.
+        /// </summary>
+        /// <returns>Whether the displayed count is equal to the actual count.</returns>
+        public virtual bool FinishedRolling() => EqualityComparer<T>.Default.Equals(DisplayedCount, Current.Value);
 
         /// <summary>
         /// Resets count to default value.

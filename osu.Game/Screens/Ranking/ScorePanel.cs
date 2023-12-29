@@ -15,8 +15,10 @@ using osu.Framework.Graphics.Audio;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
+using osu.Game.Input.Bindings;
 using osu.Game.Scoring;
 using osu.Game.Screens.Ranking.Contracted;
 using osu.Game.Screens.Ranking.Expanded;
@@ -26,7 +28,7 @@ using osuTK.Graphics;
 
 namespace osu.Game.Screens.Ranking
 {
-    public partial class ScorePanel : CompositeDrawable, IStateful<PanelState>
+    public partial class ScorePanel : CompositeDrawable, IStateful<PanelState>, IKeyBindingHandler<GlobalAction>
     {
         /// <summary>
         /// Width of the panel when contracted.
@@ -116,6 +118,8 @@ namespace osu.Game.Screens.Ranking
         private Drawable middleLayerContent;
 
         private DrawableSample samplePanelFocus;
+
+        private readonly Bindable<bool> finishAnimatingImmediately = new Bindable<bool>();
 
         public ScorePanel(ScoreInfo score, bool isNewLocalScore = false)
         {
@@ -254,7 +258,11 @@ namespace osu.Game.Screens.Ranking
 
                     bool firstLoad = topLayerContent == null;
                     topLayerContentContainer.Add(topLayerContent = new ExpandedPanelTopContent(Score.User, firstLoad) { Alpha = 0 });
-                    middleLayerContentContainer.Add(middleLayerContent = new ExpandedPanelMiddleContent(Score, displayWithFlair) { Alpha = 0 });
+                    middleLayerContentContainer.Add(middleLayerContent = new ExpandedPanelMiddleContent(Score, displayWithFlair)
+                    {
+                        Alpha = 0,
+                        FinishAnimatingImmediately = { BindTarget = finishAnimatingImmediately },
+                    });
 
                     // only the first expanded display should happen with flair.
                     displayWithFlair = false;
@@ -316,8 +324,40 @@ namespace osu.Game.Screens.Ranking
             }
         }
 
+        private double selectLastPressed;
+
+        /// <summary>
+        /// Checks if any item from the score panel is still currently animating a value,
+        /// and if so then make them finish animating instantly.
+        /// </summary>
+        /// <returns>True if the action that triggered this call should be consumed.</returns>
+        private bool handleTryFinishAnimating()
+        {
+            const double action_debounce = 350.0;
+
+            if (!finishAnimatingImmediately.Value /* && isAnimating */)
+            {
+                finishAnimatingImmediately.Value = true;
+                selectLastPressed = Clock.CurrentTime;
+                return true;
+            }
+
+            // Debounce this action to consume any input while a user may be spamming a key in order to finish animating "quicklier"
+            // This is to prevent the expand/contract panel rapidly being unintentionally spammed
+            if (selectLastPressed + action_debounce > Clock.CurrentTime)
+            {
+                selectLastPressed = Clock.CurrentTime;
+                return true;
+            }
+
+            return false;
+        }
+
         protected override bool OnClick(ClickEvent e)
         {
+            if (handleTryFinishAnimating())
+                return true;
+
             if (State == PanelState.Contracted)
             {
                 State = PanelState.Expanded;
@@ -327,6 +367,18 @@ namespace osu.Game.Screens.Ranking
             PostExpandAction?.Invoke();
 
             return true;
+        }
+
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            if (e.Action == GlobalAction.Select && !e.Repeat && handleTryFinishAnimating())
+                return true;
+
+            return false;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
         }
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)

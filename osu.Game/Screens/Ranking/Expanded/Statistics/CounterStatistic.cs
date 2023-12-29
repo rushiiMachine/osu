@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Localisation;
@@ -22,6 +23,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
         private readonly int? maxCount;
 
         private RollingCounter<int> counter;
+
+        public bool FinishedRolling => counter?.FinishedRolling() ?? false;
+        public readonly Bindable<bool> FinishRollingImmediately = new Bindable<bool>();
 
         /// <summary>
         /// Creates a new <see cref="CounterStatistic"/>.
@@ -51,7 +55,8 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
                 Child = counter = new StatisticCounter
                 {
                     Anchor = Anchor.TopCentre,
-                    Origin = Anchor.TopCentre
+                    Origin = Anchor.TopCentre,
+                    FinishRollingImmediately = { BindTarget = FinishRollingImmediately },
                 }
             };
 

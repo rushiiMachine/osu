@@ -25,6 +25,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
 
         private RollingCounter<int> counter;
 
+        public bool FinishedRolling => counter?.FinishedRolling() ?? false;
+        public readonly Bindable<bool> FinishRollingImmediately = new Bindable<bool>();
+
         public PerformanceStatistic(ScoreInfo score)
             : base(BeatmapsetsStrings.ShowScoreboardHeaderspp)
         {
@@ -66,7 +69,8 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
         protected override Drawable CreateContent() => counter = new StatisticCounter
         {
             Anchor = Anchor.TopCentre,
-            Origin = Anchor.TopCentre
+            Origin = Anchor.TopCentre,
+            FinishRollingImmediately = { BindTarget = FinishRollingImmediately },
         };
     }
 }

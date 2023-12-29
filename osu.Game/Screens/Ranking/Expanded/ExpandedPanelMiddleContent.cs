@@ -36,6 +36,8 @@ namespace osu.Game.Screens.Ranking.Expanded
     {
         private const float padding = 10;
 
+        public readonly Bindable<bool> FinishAnimatingImmediately = new Bindable<bool>();
+
         private readonly ScoreInfo score;
         private readonly bool withFlair;
 
@@ -72,15 +74,29 @@ namespace osu.Game.Screens.Ranking.Expanded
 
             var topStatistics = new List<StatisticDisplay>
             {
-                new AccuracyStatistic(score.Accuracy),
-                new ComboStatistic(score.MaxCombo, score.GetMaximumAchievableCombo()),
-                new PerformanceStatistic(score),
+                new AccuracyStatistic(score.Accuracy)
+                {
+                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
+                },
+                new ComboStatistic(score.MaxCombo, score.GetMaximumAchievableCombo())
+                {
+                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
+                },
+                new PerformanceStatistic(score)
+                {
+                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
+                },
             };
 
             var bottomStatistics = new List<HitResultStatistic>();
 
             foreach (var result in score.GetStatisticsForDisplay())
-                bottomStatistics.Add(new HitResultStatistic(result));
+            {
+                bottomStatistics.Add(new HitResultStatistic(result)
+                {
+                    FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
+                });
+            }
 
             statisticDisplays.AddRange(topStatistics);
             statisticDisplays.AddRange(bottomStatistics);
@@ -130,6 +146,7 @@ namespace osu.Game.Screens.Ranking.Expanded
                                     Origin = Anchor.Centre,
                                     RelativeSizeAxes = Axes.Both,
                                     FillMode = FillMode.Fit,
+                                    FinishAnimatingImmediately = { BindTarget = FinishAnimatingImmediately },
                                 }
                             },
                             scoreCounter = new TotalScoreCounter(!withFlair)
@@ -137,7 +154,8 @@ namespace osu.Game.Screens.Ranking.Expanded
                                 Margin = new MarginPadding { Top = 0, Bottom = 5 },
                                 Current = { Value = 0 },
                                 Alpha = 0,
-                                AlwaysPresent = true
+                                AlwaysPresent = true,
+                                FinishRollingImmediately = { BindTarget = FinishAnimatingImmediately },
                             },
                             starAndModDisplay = new FillFlowContainer
                             {
@@ -248,6 +266,12 @@ namespace osu.Game.Screens.Ranking.Expanded
                     Current = { Value = score.Mods }
                 });
             }
+
+            FinishAnimatingImmediately.BindValueChanged(e =>
+            {
+                if (e.NewValue && !e.OldValue)
+                    FinishTransforms(true);
+            });
         }
 
         protected override void LoadComplete()
@@ -273,7 +297,7 @@ namespace osu.Game.Screens.Ranking.Expanded
                     }
                 }
 
-                if (!withFlair)
+                if (!withFlair || FinishAnimatingImmediately.Value)
                     FinishTransforms(true);
             });
         }

@@ -84,6 +84,8 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
         /// </summary>
         public static readonly Easing ACCURACY_TRANSFORM_EASING = Easing.OutPow10;
 
+        public readonly Bindable<bool> FinishAnimatingImmediately = new Bindable<bool>();
+
         private readonly ScoreInfo score;
 
         private CircularProgress accuracyCircle;
@@ -259,6 +261,30 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                     swooshUpSound = new PoolableSkinnableSample(new SampleInfo(@"Results/swoosh-up")),
                 });
             }
+
+            FinishAnimatingImmediately.BindValueChanged(e =>
+            {
+                if (!e.NewValue || e.OldValue) return;
+
+                isTicking = false;
+
+                Schedule(() =>
+                {
+                    FinishTransforms(true);
+
+                    using (BeginDelayedSequence(200f))
+                    {
+                        if (!rankImpactSound.Playing && !rankImpactSound.Played)
+                        {
+                            swooshUpSound.Stop();
+                            rankImpactSound.Play();
+                        }
+
+                        if (!rankText.IsPresent)
+                            rankText.Appear();
+                    }
+                });
+            });
         }
 
         protected override void LoadComplete()
@@ -274,6 +300,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
 
                 this.Delay(swoosh_pre_delay).Schedule(() =>
                 {
+                    if (FinishAnimatingImmediately.Value)
+                        return;
+
                     swooshUpSound.VolumeTo(swoosh_volume);
                     swooshUpSound.Play();
                 });
@@ -324,6 +353,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                 {
                     Schedule(() =>
                     {
+                        if (FinishAnimatingImmediately.Value)
+                            return;
+
                         const double score_tick_debounce_rate_start = 18f;
                         const double score_tick_debounce_rate_end = 300f;
                         const double score_tick_volume_start = 0.6f;
@@ -354,6 +386,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                         {
                             Schedule(() =>
                             {
+                                if (FinishAnimatingImmediately.Value)
+                                    return;
+
                                 var dink = badgeNum < badges.Count - 1 ? badgeTickSound : badgeMaxSound;
 
                                 dink.FrequencyTo(1 + badgeNum++ * 0.05);
@@ -365,12 +400,21 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
 
                 using (BeginDelayedSequence(TEXT_APPEAR_DELAY))
                 {
-                    rankText.Appear();
+                    Schedule(() =>
+                    {
+                        if (FinishAnimatingImmediately.Value)
+                            return;
+
+                        rankText.Appear();
+                    });
 
                     if (!withFlair) return;
 
                     Schedule(() =>
                     {
+                        if (FinishAnimatingImmediately.Value)
+                            return;
+
                         isTicking = false;
                         rankImpactSound.Play();
                     });
@@ -382,11 +426,20 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                     {
                         Schedule(() =>
                         {
+                            if (FinishAnimatingImmediately.Value)
+                                return;
+
                             rankApplauseSound.VolumeTo(applause_volume);
                             rankApplauseSound.Play();
                         });
                     }
                 }
+            }
+
+            if (FinishAnimatingImmediately.Value)
+            {
+                isTicking = false;
+                FinishTransforms(true);
             }
         }
 

@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
@@ -24,6 +25,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
 
         private RollingCounter<double> counter;
 
+        public bool FinishedRolling => counter?.FinishedRolling() ?? false;
+        public readonly Bindable<bool> FinishRollingImmediately = new Bindable<bool>();
+
         /// <summary>
         /// Creates a new <see cref="AccuracyStatistic"/>.
         /// </summary>
@@ -40,7 +44,10 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
             counter.Current.Value = accuracy;
         }
 
-        protected override Drawable CreateContent() => counter = new Counter();
+        protected override Drawable CreateContent() => counter = new Counter
+        {
+            FinishRollingImmediately = { BindTarget = FinishRollingImmediately },
+        };
 
         private partial class Counter : RollingCounter<double>
         {
